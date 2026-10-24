@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tebak Warna Foto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF8EC; --card: #FFFFFF; --ink: #3B2F2F; --muted: #8A7B70;
+    --accent: #FF8A3D; --accent-dark: #D96A1F; --good: #2EB872; --line: #F1E6D8;
+    --shadow: 0 6px 0 rgba(0,0,0,.08);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Baloo 2', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden;
+  }
+  header { width: 100%; max-width: 760px; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 6px; }
+  h1 { font-size: 1.6rem; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+  h1 span:nth-child(1){color:#E63946} h1 span:nth-child(2){color:#F4A100}
+  h1 span:nth-child(3){color:#2EB872} h1 span:nth-child(4){color:#2F80ED}
+  h1 span:nth-child(5){color:#9B51E0}
+  .round-badge { background: var(--card); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 0.95rem; box-shadow: var(--shadow); display: none; }
+
+  .screen { width: 100%; max-width: 760px; padding: 8px 16px 36px; display: none; flex-direction: column; align-items: center; }
+  .screen.active { display: flex; }
+  .card { width: 100%; background: var(--card); border-radius: 24px; box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 16px; }
+  .mascot { font-size: 4.5rem; line-height: 1; margin: 8px 0 0; animation: bob 2.4s ease-in-out infinite; user-select: none; }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  .subtitle { color: var(--muted); font-size: 1.1rem; text-align: center; margin: 4px 0 16px; font-weight: 600; line-height: 1.35; }
+  .label { font-weight: 700; font-size: 1.05rem; margin: 4px 0 8px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { border: 3px solid var(--line); background: var(--card); border-radius: 16px; padding: 8px 18px; font: inherit; font-size: 1.1rem; font-weight: 700; color: var(--ink); cursor: pointer; transition: all 0.15s ease; }
+  .pill:active { transform: scale(0.96); }
+  .pill.selected { border-color: var(--accent); background: #FFF1E6; color: var(--accent-dark); }
+  .players { display: flex; flex-direction: column; gap: 10px; }
+  .player-input { display: flex; align-items: center; gap: 10px; }
+  .player-input .avatar { font-size: 1.9rem; width: 44px; text-align: center; user-select: none; }
+  .player-input input { flex: 1; font: inherit; font-size: 1.1rem; font-weight: 600; padding: 8px 14px; border: 3px solid var(--line); border-radius: 16px; background: #FFFDF9; color: var(--ink); min-width: 0; transition: border-color 0.2s; }
+  .player-input input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+  .big-btn { border: none; border-radius: 24px; background: var(--accent); color: #fff; font: inherit; font-size: 1.5rem; font-weight: 800; padding: 12px 36px; box-shadow: 0 7px 0 var(--accent-dark); cursor: pointer; margin-top: 6px; text-align: center; display: inline-block; text-decoration: none; user-select: none; transition: transform 0.1s, box-shadow 0.1s; }
+  .big-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--accent-dark); }
+  .big-btn:disabled { background: #D9CFC5; box-shadow: 0 7px 0 #BFB3A7; cursor: default; }
+  .big-btn.green { background: var(--good); box-shadow: 0 7px 0 #1F8F57; }
+  .big-btn.green:active { box-shadow: 0 2px 0 #1F8F57; }
+  .small-btn { border: none; background: var(--card); border-radius: 16px; padding: 10px 20px; font: inherit; font-weight: 700; font-size: 1rem; color: var(--muted); box-shadow: var(--shadow); cursor: pointer; transition: transform 0.1s; }
+  .small-btn:active { transform: translateY(2px); }
+  .tip { color: var(--muted); font-size: .95rem; line-height: 1.45; }
+
+  /* Target */
+  .target { display: flex; align-items: center; gap: 16px; }
+  .swatch { width: 110px; height: 110px; border-radius: 28px; border: 6px solid #fff; box-shadow: 0 6px 0 rgba(0,0,0,.15); flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .target-text { flex: 1; }
+  .target-text .small { color: var(--muted); font-weight: 700; font-size: 1.05rem; }
+  .target-text .name { font-size: 2.3rem; font-weight: 800; line-height: 1.1; margin-top: 2px; }
+  .speak { border: none; background: #FFE3CF; border-radius: 50%; width: 56px; height: 56px; font-size: 1.6rem; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 0 #F1C4A5; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; }
+  .speak:active { transform: translateY(3px); box-shadow: 0 1px 0 #F1C4A5; }
+
+  /* Giliran */
+  .turn-title { font-size: 1.65rem; font-weight: 800; text-align: center; margin: 4px 0 2px; }
+  .photo-wrap { position: relative; width: 100%; border-radius: 20px; overflow: hidden; background: #F3EBE1; display: none; margin: 10px 0; box-shadow: var(--shadow); }
+  .photo-wrap canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+  .compare { display: none; align-items: center; justify-content: center; gap: 16px; margin: 8px 0 14px; flex-wrap: wrap; }
+  .chip { display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: .95rem; color: var(--muted); }
+  .chip .box { width: 64px; height: 64px; border-radius: 18px; border: 4px solid #fff; box-shadow: 0 4px 0 rgba(0,0,0,.12); margin-bottom: 4px; }
+  .score { font-size: 2.4rem; font-weight: 800; color: var(--good); min-width: 120px; text-align: center; line-height: 1; }
+  .score small { display: block; font-size: .85rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  input[type=file] { display: none; }
+
+  /* Hasil */
+  .result-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .result { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 20px; padding: 10px 14px; box-shadow: var(--shadow); border: 3px solid transparent; }
+  .result.winner { border-color: #F7C600; background: #FFFBE6; }
+  .result .rank { font-size: 1.8rem; width: 40px; text-align: center; user-select: none; }
+  .result img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+  .result .who { flex: 1; font-weight: 700; font-size: 1.15rem; line-height: 1.25; }
+  .result .who small { display: flex; align-items: center; gap: 6px; color: var(--muted); font-weight: 600; font-size: .85rem; margin-top: 4px; }
+  .result .mini { width: 22px; height: 22px; border-radius: 7px; border: 2px solid #fff; box-shadow: 0 2px 0 rgba(0,0,0,.15); display: inline-block; }
+  .result .pct { font-size: 1.55rem; font-weight: 800; color: var(--good); }
+  .result .pts { font-size: 1.35rem; font-weight: 800; }
+  .winner-banner { font-size: 2rem; font-weight: 800; color: var(--accent); text-align: center; margin: 6px 0 12px; line-height: 1.2; }
+  .trophy { font-size: 5rem; animation: bob 1.6s ease-in-out infinite; user-select: none; }
+
+  .burst { position: fixed; pointer-events: none; font-size: 2.2rem; z-index: 50; animation: fly 1.1s cubic-bezier(0.12, 0, 0.39, 0) forwards; user-select: none; }
+  @keyframes fly { to { transform: translate(var(--dx), var(--dy)) scale(.35) rotate(240deg); opacity: 0; } }
+
+  @media (max-width: 420px) {
+    .swatch { width: 88px; height: 88px; border-radius: 22px; }
+    .target-text .name { font-size: 1.85rem; }
+    .big-btn { font-size: 1.3rem; padding: 10px 28px; }
+    .score { font-size: 2rem; min-width: 100px; }
+    .chip .box { width: 54px; height: 54px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>T</span><span>e</span><span>b</span><span>a</span><span>k</span> Warna</h1>
+  <div class="round-badge" id="roundBadge">Ronde 1/3</div>
+</header>
+
+<!-- ========== SETUP ========== -->
+<section class="screen active" id="setup">
+  <div class="mascot">📸</div>
+  <p class="subtitle">Cari benda yang warnanya paling mirip, potret, dan jadi juara!</p>
+
+  <div class="card">
+    <div class="label">Berapa pemain?</div>
+    <div class="row" id="countRow"></div>
+    <div class="label" style="margin-top:14px">Nama pemain</div>
+    <div class="players" id="playerInputs"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Berapa ronde?</div>
+    <div class="row" id="roundRow">
+      <button class="pill" data-r="1">1</button>
+      <button class="pill selected" data-r="3">3</button>
+      <button class="pill" data-r="5">5</button>
+    </div>
+  </div>
+
+  <button class="big-btn" id="startBtn">Mulai! ▶</button>
+
+  <div class="card" style="margin-top:20px">
+    <div class="tip">👩‍👧 <b>Cara main:</b> Aplikasi menunjukkan satu warna. Semua pemain mencari benda di sekitar yang warnanya mirip. Bergiliran memotret pakai HP ini — ketuk foto untuk memilih bagian benda yang mau dinilai. Foto dengan warna paling mirip mendapat ⭐. Pemain dengan bintang terbanyak di akhir permainan menang!</div>
+  </div>
+</section>
+
+<!-- ========== TARGET ========== -->
+<section class="screen" id="targetScreen">
+  <div class="card">
+    <div class="target">
+      <div class="swatch" id="tSwatch"></div>
+      <div class="target-text">
+        <div class="small">Ayo cari warna…</div>
+        <div class="name" id="tName">Merah</div>
+      </div>
+      <button class="speak" id="tSpeak" aria-label="Dengarkan">🔊</button>
+    </div>
+  </div>
+  <p class="subtitle">Semua pemain, cari benda berwarna ini di sekitarmu! 🔍<br>Sudah ketemu? Kita mulai memotret.</p>
+  <button class="big-btn" id="toTurnsBtn">Sudah ketemu! 📸</button>
+</section>
+
+<!-- ========== GILIRAN PEMAIN ========== -->
+<section class="screen" id="turnScreen">
+  <div class="card" style="padding:12px 16px">
+    <div class="target">
+      <div class="swatch" id="tSwatch2" style="width:60px;height:60px;border-radius:18px;border-width:4px"></div>
+      <div class="target-text"><div class="small">Warna target</div><div class="name" id="tName2" style="font-size:1.5rem">Merah</div></div>
+    </div>
+  </div>
+
+  <div class="turn-title" id="turnTitle">Giliran Pemain 1</div>
+  <p class="subtitle" id="turnHint" style="margin-bottom:8px">Potret benda yang kamu temukan</p>
+
+  <div class="photo-wrap" id="photoWrap"><canvas id="photoCanvas"></canvas></div>
+
+  <div class="compare" id="compare">
+    <div class="chip"><div class="box" id="cTarget"></div>Target</div>
+    <div class="score" id="scoreVal">0%<small>mirip</small></div>
+    <div class="chip"><div class="box" id="cPhoto"></div>Fotomu</div>
+  </div>
+
+  <div class="actions">
+    <label class="big-btn" id="shootBtn" for="fileInput">📷 Ambil Foto</label>
+    <button class="big-btn green" id="lockBtn" style="display:none">Kunci ✔</button>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" capture="environment">
+  <p class="tip" id="tapTip" style="display:none;text-align:center;margin-top:12px">👆 Ketuk foto untuk memilih bagian benda yang mau dinilai</p>
+</section>
+
+<!-- ========== HASIL RONDE ========== -->
+<section class="screen" id="roundResult">
+  <div class="winner-banner" id="roundWinner"></div>
+  <div class="result-list" id="roundList"></div>
+  <div style="margin-top:20px"><button class="big-btn" id="nextRoundBtn">Ronde berikutnya ▶</button></div>
+</section>
+
+<!-- ========== HASIL AKHIR ========== -->
+<section class="screen" id="finalScreen">
+  <div class="trophy">🏆</div>
+  <div class="winner-banner" id="finalWinner"></div>
+  <div class="result-list" id="finalList"></div>
+  <div class="actions" style="margin-top:20px">
+    <button class="big-btn" id="replayBtn">Main lagi 🔁</button>
+    <button class="small-btn" id="setupBtn">⚙️ Ganti pemain</button>
+  </div>
+</section>
+
+<script>
+(() => {
+  // ================== DATA ==================
+  const TARGETS = [
+    { name: 'Merah',  hex: '#E63946' },
+    { name: 'Kuning', hex: '#F7C600' },
+    { name: 'Hijau',  hex: '#2EB872' },
+    { name: 'Biru',   hex: '#2F80ED' },
+    { name: 'Oranye', hex: '#FF8A1F' },
+    { name: 'Ungu',   hex: '#9B51E0' },
+    { name: 'Pink',   hex: '#FF6FAE' },
+    { name: 'Tosca',  hex: '#1ABC9C' },
+    { name: 'Coklat', hex: '#8B5A2B' },
+    { name: 'Putih',  hex: '#F4F4F4' },
+    { name: 'Hitam',  hex: '#222222' },
+  ];
+  const AVATARS = ['🐻', '🐰', '🦊', '🐼', '🐸', '🐯'];
+  const MEDALS = ['🥇', '🥈', '🥉', '4', '5', '6'];
+
+  // ================== STATE ==================
+  let playerCount = 2, totalRounds = 3;
+  let players = [];          // {name, avatar, points}
+  let round = 0, target = null, usedTargets = [];
+  let turn = 0, roundShots = [];   // {player, thumb, rgb, score}
+  let sample = null, current = null;
+  let cleanCanvas = document.createElement('canvas'); // canvas penyimpan gambar asli tanpa tanda lingkaran
+
+  const $ = id => document.getElementById(id);
+  const show = id => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    $('roundBadge').style.display = (id === 'setup') ? 'none' : 'block';
+    window.scrollTo(0, 0);
+  };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  // ================== SUARA & EFEK ==================
+  let idVoice = null;
+  function loadVoice() {
+    if (!window.speechSynthesis) return;
+    const vs = speechSynthesis.getVoices();
+    idVoice = vs.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('id')) || null;
+  }
+  if (window.speechSynthesis) {
+    loadVoice();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = loadVoice;
+    }
+  }
+
+  function say(text) {
+    if (!window.speechSynthesis) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'id-ID'; u.rate = 0.95; u.pitch = 1.05;
+      if (idVoice) u.voice = idVoice;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  let actx = null;
+  function ensureAudioUnlocked() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx && actx.state === 'suspended') actx.resume();
+    } catch (e) {}
+  }
+
+  function beep(freqs, dur = 0.12) {
+    try {
+      ensureAudioUnlocked();
+      if (!actx) return;
+      freqs.forEach((f, i) => {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        const t = actx.currentTime + i * dur;
+        g.gain.setValueAtTime(0.2, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g);
+        g.connect(actx.destination);
+        o.start(t);
+        o.stop(t + dur);
+      });
+    } catch (e) {}
+  }
+
+  function burst(x, y) {
+    for (let i = 0; i < 16; i++) {
+      const s = document.createElement('div');
+      s.className = 'burst'; s.textContent = pick(['⭐', '✨', '🌟', '🎉']);
+      s.style.left = x + 'px'; s.style.top = y + 'px';
+      const a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 110;
+      s.style.setProperty('--dx', Math.cos(a) * d + 'px'); s.style.setProperty('--dy', Math.sin(a) * d + 'px');
+      document.body.appendChild(s); setTimeout(() => s.remove(), 1100);
+    }
+  }
+
+  // ================== WARNA: RGB → Lab, CIEDE2000 ==================
+  const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const rgbToHex = c => '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  
+  function rgbToLab([r, g, b]) {
+    const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const R = lin(r), G = lin(g), B = lin(b);
+    let X = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
+    let Y = (R * 0.2126 + G * 0.7152 + B * 0.0722);
+    let Z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
+    const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+    X = f(X); Y = f(Y); Z = f(Z);
+    return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+  }
+
+  function deltaE2000([L1, a1, b1], [L2, a2, b2]) {
+    const rad = Math.PI / 180, deg = 180 / Math.PI;
+    const C1 = Math.hypot(a1, b1), C2 = Math.hypot(a2, b2), Cb = (C1 + C2) / 2;
+    const G = 0.5 * (1 - Math.sqrt(Math.pow(Cb, 7) / (Math.pow(Cb, 7) + Math.pow(25, 7))));
+    const a1p = (1 + G) * a1, a2p = (1 + G) * a2;
+    const C1p = Math.hypot(a1p, b1), C2p = Math.hypot(a2p, b2);
+    const h = (b, a) => { if (a === 0 && b === 0) return 0; const x = Math.atan2(b, a) * deg; return x < 0 ? x + 360 : x; };
+    const h1p = h(b1, a1p), h2p = h(b2, a2p);
+    const dLp = L2 - L1, dCp = C2p - C1p;
+    let dhp = 0;
+    if (C1p * C2p !== 0) { dhp = h2p - h1p; if (dhp > 180) dhp -= 360; else if (dhp < -180) dhp += 360; }
+    const dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin(dhp / 2 * rad);
+    const Lbp = (L1 + L2) / 2, Cbp = (C1p + C2p) / 2;
+    let hbp = h1p + h2p;
+    if (C1p * C2p !== 0) { if (Math.abs(h1p - h2p) > 180) hbp += (h1p + h2p < 360) ? 360 : -360; hbp /= 2; }
+    const T = 1 - 0.17 * Math.cos((hbp - 30) * rad) + 0.24 * Math.cos(2 * hbp * rad)
+            + 0.32 * Math.cos((3 * hbp + 6) * rad) - 0.20 * Math.cos((4 * hbp - 63) * rad);
+    const dTheta = 30 * Math.exp(-Math.pow((hbp - 275) / 25, 2));
+    const Rc = 2 * Math.sqrt(Math.pow(Cbp, 7) / (Math.pow(Cbp, 7) + Math.pow(25, 7)));
+    const Sl = 1 + (0.015 * Math.pow(Lbp - 50, 2)) / Math.sqrt(20 + Math.pow(Lbp - 50, 2));
+    const Sc = 1 + 0.045 * Cbp, Sh = 1 + 0.015 * Cbp * T;
+    const Rt = -Math.sin(2 * dTheta * rad) * Rc;
+    const kL = 2; // bobot terang-gelap diperingan agar adil saat pencahayaan ruangan redup
+    return Math.sqrt(Math.pow(dLp / (kL * Sl), 2) + Math.pow(dCp / Sc, 2) + Math.pow(dHp / Sh, 2) + Rt * (dCp / Sc) * (dHp / Sh));
+  }
+  
+  // Kemiripan = 100 − 2 × ΔE (minimal 0%)
+  const similarity = (rgb, hex) => Math.max(0, Math.min(100, Math.round(100 - deltaE2000(rgbToLab(rgb), rgbToLab(hexToRgb(hex))) * 2)));
+
+  // ================== SETUP ==================
+  let savedNames = [];
+  function renderCount() {
+    const row = $('countRow'); row.innerHTML = '';
+    [2, 3, 4, 5, 6].forEach(n => {
+      const b = document.createElement('button');
+      b.className = 'pill' + (n === playerCount ? ' selected' : ''); b.textContent = n;
+      b.onclick = () => { saveNames(); playerCount = n; renderCount(); beep([660]); };
+      row.appendChild(b);
+    });
+    const box = $('playerInputs'); box.innerHTML = '';
+    for (let i = 0; i < playerCount; i++) {
+      const d = document.createElement('div'); d.className = 'player-input';
+      d.innerHTML = `<span class="avatar">${AVATARS[i]}</span><input maxlength="14" id="pn${i}" value="${savedNames[i] || 'Pemain ' + (i + 1)}">`;
+      box.appendChild(d);
+    }
+  }
+  function saveNames() { for (let i = 0; i < playerCount; i++) { const el = $('pn' + i); if (el) savedNames[i] = el.value; } }
+  renderCount();
+
+  $('roundRow').querySelectorAll('.pill').forEach(b => b.onclick = () => {
+    $('roundRow').querySelectorAll('.pill').forEach(x => x.classList.remove('selected'));
+    b.classList.add('selected'); totalRounds = +b.dataset.r; beep([660]);
+  });
+
+  $('startBtn').onclick = () => {
+    ensureAudioUnlocked();
+    saveNames();
+    players = Array.from({ length: playerCount }, (_, i) => ({
+      name: (savedNames[i] || '').trim() || 'Pemain ' + (i + 1), avatar: AVATARS[i], points: 0
+    }));
+    round = 0; usedTargets = []; startRound();
+  };
+
+  // ================== RONDE ==================
+  function startRound() {
+    round++;
+    $('roundBadge').textContent = `Ronde ${round}/${totalRounds}`;
+    const pool = TARGETS.filter(t => !usedTargets.includes(t));
+    target = pick(pool.length ? pool : TARGETS); usedTargets.push(target);
+    [$('tSwatch'), $('tSwatch2'), $('cTarget')].forEach(el => el.style.background = target.hex);
+    $('tName').textContent = target.name; $('tName2').textContent = target.name;
+    roundShots = []; turn = 0;
+    show('targetScreen');
+    setTimeout(() => say(`Ayo cari benda berwarna ${target.name}!`), 350);
+  }
+  $('tSpeak').onclick = () => say(`Ayo cari benda berwarna ${target.name}!`);
+  $('toTurnsBtn').onclick = () => { ensureAudioUnlocked(); startTurn(); };
+
+  function startTurn() {
+    const p = players[turn];
+    $('turnTitle').textContent = `${p.avatar} Giliran ${p.name}`;
+    $('turnHint').textContent = 'Potret benda yang kamu temukan';
+    $('photoWrap').style.display = 'none'; $('compare').style.display = 'none';
+    $('lockBtn').style.display = 'none'; $('tapTip').style.display = 'none';
+    $('shootBtn').innerHTML = '📷 Ambil Foto';
+    $('fileInput').value = '';
+    sample = null; current = null;
+    show('turnScreen');
+    say(`Giliran ${p.name}. Ayo potret!`);
+  }
+
+  // ================== FOTO & SAMPLING ==================
+  const canvas = $('photoCanvas'), ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let pixels = null;
+
+  $('fileInput').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      const max = 700, s = Math.min(1, max / Math.max(im.width, im.height));
+      const w = Math.round(im.width * s);
+      const h = Math.round(im.height * s);
+      canvas.width = w; canvas.height = h;
+      cleanCanvas.width = w; cleanCanvas.height = h;
+
+      const cCtx = cleanCanvas.getContext('2d');
+      cCtx.drawImage(im, 0, 0, w, h);
+      ctx.drawImage(im, 0, 0, w, h);
+
+      pixels = cCtx.getImageData(0, 0, w, h);
+      URL.revokeObjectURL(url);
+
+      sample = { x: w / 2, y: h / 2 };
+      $('photoWrap').style.display = 'block'; $('compare').style.display = 'flex';
+      $('lockBtn').style.display = 'inline-block'; $('tapTip').style.display = 'block';
+      $('shootBtn').innerHTML = '🔄 Foto ulang';
+      $('turnHint').textContent = 'Ketuk bendanya kalau lingkaran belum pas';
+      evaluate();
+    };
+    im.src = url;
+  });
+
+  function sampleColor(cx, cy) {
+    const r = Math.max(7, Math.round(Math.min(canvas.width, canvas.height) * 0.065));
+    const d = pixels.data; let R = 0, G = 0, B = 0, n = 0;
+    const minX = Math.max(0, Math.floor(cx - r)), maxX = Math.min(canvas.width - 1, Math.ceil(cx + r));
+    const minY = Math.max(0, Math.floor(cy - r)), maxY = Math.min(canvas.height - 1, Math.ceil(cy + r));
+
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 > r * r) continue;
+        const i = (y * canvas.width + x) * 4;
+        R += d[i]; G += d[i + 1]; B += d[i + 2]; n++;
+      }
+    }
+    if (n === 0) {
+      const i = (Math.floor(cy) * canvas.width + Math.floor(cx)) * 4;
+      return { rgb: [d[i], d[i + 1], d[i + 2]], r };
+    }
+    return { rgb: [R / n, G / n, B / n], r };
+  }
+
+  function evaluate() {
+    const { rgb, r } = sampleColor(sample.x, sample.y);
+    const score = similarity(rgb, target.hex);
+    current = { rgb, score };
+
+    // Gambar ulang dari buffer bersih lalu gambar penanda lingkaran
+    ctx.drawImage(cleanCanvas, 0, 0);
+
+    // Lingkaran luar putih tebal
+    ctx.lineWidth = Math.max(3.5, r * 0.2);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(sample.x, sample.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Garis outline kontras gelap
+    ctx.lineWidth = Math.max(1.5, r * 0.08);
+    ctx.strokeStyle = '#111111';
+    ctx.beginPath();
+    ctx.arc(sample.x, sample.y, r + ctx.lineWidth * 1.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Titik tengah sasaran
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(sample.x, sample.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    $('cPhoto').style.background = rgbToHex(rgb);
+    $('scoreVal').innerHTML = `${score}%<small>mirip</small>`;
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (!pixels) return;
+    const rect = canvas.getBoundingClientRect();
+    sample = {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height)
+    };
+    evaluate();
+    beep([720], 0.06);
+  });
+
+  $('lockBtn').onclick = () => {
+    if (!current) return;
+    // Buat thumbnail kecil persegi bersih untuk layar hasil
+    const t = document.createElement('canvas'), size = 160;
+    t.width = size; t.height = size;
+    const s = Math.max(size / cleanCanvas.width, size / cleanCanvas.height);
+    const w = cleanCanvas.width * s, h = cleanCanvas.height * s;
+    t.getContext('2d').drawImage(cleanCanvas, (size - w) / 2, (size - h) / 2, w, h);
+
+    roundShots.push({
+      player: players[turn],
+      thumb: t.toDataURL('image/jpeg', 0.8),
+      rgb: current.rgb,
+      score: current.score
+    });
+
+    beep([523, 659]);
+    turn++;
+    if (turn < players.length) startTurn(); else showRoundResult();
+  };
+
+  // ================== HASIL ==================
+  function showRoundResult() {
+    const sorted = [...roundShots].sort((a, b) => b.score - a.score);
+    const best = sorted[0].score;
+    const winners = sorted.filter(s => s.score === best);
+    winners.forEach(w => w.player.points++);
+
+    $('roundWinner').innerHTML = winners.length > 1
+      ? `🤝 Seri! ${winners.map(w => w.player.avatar + ' ' + w.player.name).join(' & ')}`
+      : `🎉 ${winners[0].player.avatar} ${winners[0].player.name} menang!`;
+
+    const list = $('roundList'); list.innerHTML = '';
+    let prevScore = null, rank = 0;
+    sorted.forEach((s, i) => {
+      if (s.score !== prevScore) rank = i;
+      prevScore = s.score;
+      const d = document.createElement('div');
+      d.className = 'result' + (s.score === best ? ' winner' : '');
+      d.innerHTML = `
+        <div class="rank">${MEDALS[rank] || rank + 1}</div>
+        <img src="${s.thumb}" alt="Foto ${s.player.name}">
+        <div class="who">${s.player.avatar} ${s.player.name}
+          <small><span class="mini" style="background:${rgbToHex(s.rgb)}"></span> vs <span class="mini" style="background:${target.hex}"></span></small>
+        </div>
+        <div class="pct">${s.score}%</div>`;
+      list.appendChild(d);
+    });
+
+    $('nextRoundBtn').textContent = round < totalRounds ? 'Ronde berikutnya ▶' : 'Lihat juara 🏆';
+    show('roundResult');
+    beep([523, 659, 784], 0.15);
+    setTimeout(() => burst(window.innerWidth / 2, 120), 150);
+    say(winners.length > 1 ? 'Seri! Hebat semuanya!' : `${winners[0].player.name} menang! Warnanya paling mirip!`);
+  }
+
+  $('nextRoundBtn').onclick = () => { if (round < totalRounds) startRound(); else showFinal(); };
+
+  function showFinal() {
+    const sorted = [...players].sort((a, b) => b.points - a.points);
+    const top = sorted[0].points, champs = sorted.filter(p => p.points === top);
+    $('finalWinner').innerHTML = champs.length > 1
+      ? `Juaranya bersama: ${champs.map(c => c.avatar + ' ' + c.name).join(' & ')}!`
+      : `${champs[0].avatar} ${champs[0].name}<br>Juara Warna!`;
+
+    const list = $('finalList'); list.innerHTML = '';
+    let prev = null, rank = 0;
+    sorted.forEach((p, i) => {
+      if (p.points !== prev) rank = i;
+      prev = p.points;
+      const d = document.createElement('div');
+      d.className = 'result' + (p.points === top ? ' winner' : '');
+      d.innerHTML = `
+        <div class="rank">${MEDALS[rank] || rank + 1}</div>
+        <div class="rank">${p.avatar}</div>
+        <div class="who">${p.name}</div>
+        <div class="pts">${p.points > 0 ? '⭐'.repeat(p.points) : '—'}</div>`;
+      list.appendChild(d);
+    });
+
+    $('roundBadge').textContent = 'Selesai!';
+    show('finalScreen');
+    beep([523, 659, 784, 1046], 0.15);
+    setTimeout(() => burst(window.innerWidth / 2, 160), 150);
+    say(champs.length > 1 ? 'Semuanya juara! Hebat!' : `Selamat ${champs[0].name}, kamu juara warna!`);
+  }
+
+  $('replayBtn').onclick = () => { players.forEach(p => p.points = 0); round = 0; usedTargets = []; startRound(); };
+  $('setupBtn').onclick = () => { renderCount(); show('setup'); };
+})();
+</script>
+</body>
+</html>
